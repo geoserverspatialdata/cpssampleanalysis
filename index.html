@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+        .side-menu {
+            width: 250px;
+            height: 100vh;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            display: block;
+        }
+        .side-menu h2 {
+            text-align: center;
+        }
+        .side-menu ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .side-menu ul li {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .side-menu ul li:hover {
+            background-color: #575757;
+        }
+        .content {
+            margin-left: 260px;
+            padding: 20px;
+            width: 100%;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 90%;
+            height: 500px; /* Increased chart height */
+            width: 90%; /* Increased chart width */
+        }
+        .district-image {
+            width: 90%; /* Matches the chart width */
+            height: auto;
+            margin-top: 20px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="side-menu">
+    <h2>CPS-HSPR</h2>
+    <ul>
+        <li onclick="showSection('central-karoo')">Central Karoo</li>
+        <li onclick="showSection('garden-route')">Garden Route</li>
+        <li onclick="showSection('overberg')">Overberg</li>
+        <li onclick="showSection('cape-winelands')">Cape Winelands</li>
+        <li onclick="showSection('west-coast')">West Coast</li>
+        <li onclick="showSection('city-cape-town')">City of Cape Town</li>
+    </ul>
+</div>
+
+<div class="content">
+    <canvas id="districtChart"></canvas>
+    <img src="" alt="District Image" class="district-image" id="districtImage" style="display:none;">
+</div>
+
+<script>
+    // Data for districts with multiple categories (Farms, Formals, Informals, Smallholdings)
+    const districtData = {
+        "central-karoo": {
+            labels: ["Beaufort West", "Prince Albert", "Laingsburg"],
+            farms: [5, 3, 4],
+            formals: [18, 6, 4],
+            informals: [0, 0, 0],
+            smallholdings: [0, 0, 0],
+            img: "CK.jpg"
+        },
+        "garden-route": {
+            labels: ["George", "Bito Sample", "Hessequa Sample", "Kannaland Sample", "Knysna Sample", "Mossel Bay Sample", "Oudtshoorn Sample"],
+            farms: [2, 1, 1, 1, 0, 1, 3],
+            formals: [19, 6, 3, 3, 10, 16, 7],
+            informals: [0, 2, 4, 0, 3, 1, 0],
+            smallholdings: [0, 1, 0, 0, 0, 0, 0],
+            img: "GR.jpg"
+        },
+        "overberg": {
+            labels: ["Cape Agulhas", "Overstrand", "Swellendam", "Theewaterskloof"],
+            farms: [2, 4, 4, 2],
+            formals: [5, 21, 4, 11],
+            informals: [1, 1, 0, 4],
+            smallholdings: [0, 0, 1, 0],
+            img: "OB.jpg"
+        },
+        "cape-winelands": {
+            labels: ["Breede Valley", "Drakenstein", "Langeberg", "Stellenbosch", "Witzenberg"],
+            farms: [0, 5, 2, 2, 3],
+            formals: [14, 14, 9, 11, 5],
+            informals: [0, 2, 0, 4, 1],
+            smallholdings: [0, 0, 0, 0, 0],
+            img: "CW.jpg"
+        },
+        "west-coast": {
+            labels: ["Bergrivier", "Cederberg", "Matzikama", "Saldanha", "Swartland"],
+            farms: [0, 6, 1, 2, 5],
+            formals: [3, 3, 5, 20, 12],
+            informals: [0, 0, 0, 0, 0],
+            smallholdings: [0, 0, 0, 1, 0],
+            img: "WC.jpg"
+        },
+        "city-cape-town": {
+            labels: ["Metro1", "Metro2"],
+            farms: [0, 0],
+            formals: [74, 82],
+            informals: [0, 0],
+            smallholdings: [0, 0],
+            img: "Metro1.jpg"
+        }
+    };
+
+    // Initialize Chart.js
+    const ctx = document.getElementById('districtChart').getContext('2d');
+    let districtChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Farms',
+                    data: [],
+                    backgroundColor: 'rgba(34, 139, 34, 0.6)', // Green
+                    borderColor: 'rgba(34, 139, 34, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Formals',
+                    data: [],
+                    backgroundColor: 'rgba(0, 0, 255, 0.6)', // Blue
+                    borderColor: 'rgba(0, 0, 255, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Informals',
+                    data: [],
+                    backgroundColor: 'rgba(255, 0, 0, 0.6)', // Red
+                    borderColor: 'rgba(255, 0, 0, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Smallholdings',
+                    data: [],
+                    backgroundColor: 'rgba(128, 0, 128, 0.6)', // Purple
+                    borderColor: 'rgba(128, 0, 128, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Function to show the selected district section
+    function showSection(sectionId) {
+        const section = districtData[sectionId];
+        if (section) {
+            // Update chart data
+            districtChart.data.labels = section.labels;
+            districtChart.data.datasets[0].data = section.farms;
+            districtChart.data.datasets[1].data = section.formals;
+            districtChart.data.datasets[2].data = section.informals;
+            districtChart.data.datasets[3].data = section.smallholdings;
+            districtChart.update();
+
+            // Update image
+            const image = document.getElementById('districtImage');
+            image.src = section.img;
+            image.style.display = 'block';
+        }
+    }
+</script>
+
+</body>
+</html>
